@@ -11,28 +11,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download and extract project
+      - name: Extract project
         run: |
+          rm -rf project
+          mkdir project
           unzip -q AryaAI_APK_Ready_v4.zip -d project
-          
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      - name: Enable AndroidX
+        working-directory: project
+        run: |
+          printf "android.useAndroidX=true\n" > gradle.properties
+          printf "android.enableJetifier=true\n" >> gradle.properties
+
       - name: Install Gradle
         run: |
           wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle-8.9-bin.zip
-          echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
+          echo "$PWD/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Build APK
+      - name: Build Debug APK
         working-directory: project
-        run: gradle assembleDebug
+        run: gradle assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Arya-AI-APK
           path: project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
